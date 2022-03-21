@@ -8,7 +8,7 @@ import { Liquid } from 'liquidjs'
 import { join, extname } from 'path'
 import { readFileSync } from 'fs'
 import { Ambassador, Game, Tag } from 'biketag/lib/common/schema'
-import { activeQueue, BackgroundProcessResults } from './types'
+import { activeQueue, BackgroundProcessResults, BikeTagRuntimeSchema } from './types'
 import { JwtVerifier, getTokenFromHeader } from '@serverless-jwt/jwt-verifier'
 import BikeTagClient from 'biketag'
 import axios from 'axios'
@@ -16,8 +16,12 @@ import Ajv from 'ajv'
 import * as jose from 'jose'
 import { BikeTagProfile } from '../../src/common/types'
 import lzutf8 from 'lzutf8'
+import { Client } from 'redis-om'
 
 const ajv = new Ajv()
+const client = new Client()
+let runtimeRepository
+
 export const getBikeTagHash = (val: string): string => md5(`${val}${process.env.HOST_KEY}`)
 export const getBikeTagClientOpts = (
   req?: request.Request,
@@ -960,7 +964,7 @@ export const getWinningTagForCurrentRound = (timedOutTags: Tag[], currentBikeTag
   return undefined
 }
 
-export const acceptCorsHeaders = (withAuthorization = true) => {
+export const acceptCorsHeaders = async (withAuthorization = true) => {
   const corsHeaders = {
     Accept: '*',
     'Access-Control-Allow-Headers': '*',
@@ -971,7 +975,10 @@ export const acceptCorsHeaders = (withAuthorization = true) => {
   }
 
   if (withAuthorization) {
-    const token = getEnvironmentVariable('A_TOKEN')
+    /// get from redis
+
+    const token = await getRuntimeVariable('A_TOKEN')
+    console.log({ token })
     corsHeaders['authorization'] = `Bearer ${token}`
   }
 
@@ -1090,4 +1097,29 @@ export const getEnvironmentVariable = (key: string) => {
   if (process.env[key]) {
     return decompress(process.env[key], { inputEncoding: 'Base64' })
   }
+}
+
+export const getRuntimeVariable = async (key: string) => {
+  if (!runtimeRepository) {
+    await getRuntimeVariables()
+  }
+
+  console.log({ runtimeRepository, c: runtimeRepository.client })
+  return runtimeRepository.client.getVariable(key)
+}
+
+const getRuntimeVariables = async () => {
+  if (runtimeRepository) {
+    return runtimeRepository
+  }
+
+  if (!client.isOpen()) {
+    await client.open(process.env.REDIS_OM_URL)
+  }
+
+  runtimeRepository = await client.fetchRepository(BikeTagRuntimeSchema)
+
+  //   await repository.createIndex();
+
+  return runtimeRepository
 }

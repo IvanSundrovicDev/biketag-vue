@@ -11,13 +11,14 @@ import {
 
 const profileHandler: Handler = async (event) => {
   /// Bailout on OPTIONS requests
-  const headers = acceptCorsHeaders(false)
+  const headers = await acceptCorsHeaders(false)
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: HttpStatusCode.NoContent,
       headers,
     }
   }
+
   /// If all else fails
   let body = 'missing authorization header'
   let statusCode = HttpStatusCode.Unauthorized
@@ -27,7 +28,7 @@ const profileHandler: Handler = async (event) => {
   /// We can only provide profile data if the profile already exists (created by Auth0)
   if (profile && profile.sub) {
     let options = {}
-    const authorizationHeaders = acceptCorsHeaders(true)
+    const authorizationHeaders = await acceptCorsHeaders(true)
 
     switch (event.httpMethod) {
       /// Create new profile fields (role, name)
@@ -163,7 +164,7 @@ const profileHandler: Handler = async (event) => {
     }
   } else if (event.httpMethod === 'GET' && profile?.name) {
     /// Check in Auth0 that the credentials are valid
-    const authorizationHeaders = acceptCorsHeaders(true)
+    const authorizationHeaders = await acceptCorsHeaders(true)
     try {
       const exists = (
         await axios.request({
@@ -201,7 +202,7 @@ const profileHandler: Handler = async (event) => {
     }
   } else if (event.httpMethod === 'GET' && !profile) {
     if (event.queryStringParameters?.name) {
-      const authorizationHeaders = acceptCorsHeaders(true)
+      const authorizationHeaders = await acceptCorsHeaders(true)
       await axios
         .request({
           method: 'GET',

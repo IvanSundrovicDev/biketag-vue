@@ -38,6 +38,7 @@ export default defineConfig({
       A_CID: process.env.A_CID ?? null,
       A_DOMAIN: process.env.A_DOMAIN ?? null,
       A_TOKEN: process.env.A_TOKEN ?? null,
+      REDIS_OM_URL: process.env.REDIS_OM_URL ?? null,
       /* Croquet Configuration */
       C_AKEY: process.env.C_AKEY ?? null,
       C_SNAME: process.env.C_SNAME ?? 'biketag',

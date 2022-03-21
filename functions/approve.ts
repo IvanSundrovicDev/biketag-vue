@@ -14,7 +14,7 @@ import { HttpStatusCode } from './common/constants'
 
 const approveHandler: Handler = async (event) => {
   /// Bailout on OPTIONS requests
-  const headers = acceptCorsHeaders(false)
+  const headers = await acceptCorsHeaders(false)
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: HttpStatusCode.NoContent,
